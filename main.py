@@ -1,22 +1,29 @@
 import numpy as np
 import time
 from math import floor, e
-
+from bisect import insort_left
 
 #  Karmarkar-Karp algorithm
 def KK(arr):
-    arr[::-1].sort()  # sort in descending order, in place
-    counter = len(arr)
-    while (counter > 0):
-        absdiff = abs(arr[0] - arr[1])
-        arr[0] = abs(arr[0] - arr[1])
-        arr[1] = 0
-        arr[::-1].sort()  # this is not the most efficient! but i'm lazy
-        if absdiff:
-            counter -= 1
-        else:
-            counter -= 2
-    return arr[0]
+    # arr[::-1].sort()  # sort in descending order, in place
+    # counter = len(arr)
+    # while (counter > 0):
+    #     absdiff = abs(arr[0] - arr[1])
+    #     arr[0] = abs(arr[0] - arr[1])
+    #     arr[1] = 0
+    #     arr[::-1].sort()  # this is not the most efficient! but i'm lazy
+    #     if absdiff:
+    #         counter -= 1
+    #     else:
+    #         counter -= 2
+    # return arr[0]
+
+    # first convert to python list then use bisect.insort_left
+    l = list(arr)
+    l.sort()
+    while len(l) > 1:
+        insort_left(l, abs(l.pop() - l.pop())) # pop two (largest) from the right, find abs diff, then insert back
+    return l[0]
 
 
 def residue(S, A, arr_len, repn):
@@ -54,25 +61,26 @@ def repeated_random(A, max_iter, repn):
     return S
 
 
-def random_neighbor(S, index_list, arr_len, repn):
+def random_neighbor(S, arr_len, repn):
     Snew = np.copy(S)
     if repn == 'sign':
-        indices = np.random.choice(index_list, 2, replace=False)
-        Snew[indices[0]] *= -1
-        if np.random.random() > 0.5:
-            Snew[indices[1]] *= -1
+        i,j = 0,0
+        while i == j:
+            i, j = np.random.randint(0, arr_len), np.random.randint(0, arr_len)
+        Snew[i] = -Snew[i]
+        if np.random.random() < 0.5:
+            Snew[j] = -Snew[j]
     elif repn == 'prepartition':
         i, j = np.random.randint(0, arr_len), np.random.randint(0, arr_len)
-        while S[i] == j:  # because we don't want p_i = j, given by problem spec
+        while Snew[i] == j:  # because we don't want p_i = j, given by problem spec
             i, j = np.random.randint(0, arr_len), np.random.randint(0, arr_len)  # regenerate
-        S[i] = j
+        Snew[i] = j
     return Snew
 
 
 def hill_climbing(A, max_iter, repn, S_init=None):
     # generate a random solution
     arr_len = len(A)
-    index_list = list(range(arr_len))
     if S_init is not None:
         S = S_init
     else:
@@ -81,29 +89,28 @@ def hill_climbing(A, max_iter, repn, S_init=None):
     res_S = residue(S, A, arr_len, repn)
 
     for iter in range(max_iter):
-        Sp = random_neighbor(S, index_list, arr_len, repn)
-        if residue(Sp, A, arr_len, repn) < res_S:
+        Sp = random_neighbor(S, arr_len, repn)
+        res_Sp = residue(Sp, A, arr_len, repn)
+        if res_Sp < res_S:
             S = np.copy(Sp)
-            res_S = residue(S, A, arr_len, repn)
+            res_S = res_Sp
     return S
 
 
 def annealing(A, max_iter, T, repn, S_init=None):
-    # generate a random solution
     arr_len = len(A)
-    index_list = list(range(arr_len))
 
     # This is for debugging, when we feed the same initial solutions to
     # the hill climbing and annealing algorithms
     if S_init is not None:
         S = S_init
-    else:
+    else: # generate a random solution
         S = random_solution(arr_len, repn)
 
     Sbest = np.copy(S)
     res_Sbest = residue(Sbest, A, arr_len, repn)
     for iter in range(max_iter):
-        Sp = random_neighbor(S, index_list, arr_len, repn)
+        Sp = random_neighbor(S, arr_len, repn)
         res_Sp = residue(Sp, A, arr_len, repn)
         res_S = residue(S, A, arr_len, repn)
         if res_Sp < res_S:
@@ -148,9 +155,9 @@ def estimated_average_residues(repn, max_iters, n_instances, n_ints, upper_bound
 
 
 max_iters = 25000
-np.random.seed(125)
+np.random.seed(123)
 
 start = time.time()
-print(estimated_average_residues('prepartition', 25000, 50, 100, 10 ** 12))
+print(estimated_average_residues('prepartition', 25000, 10, 100, 10 ** 12))
 end = time.time()
 print("Time elapsed:", end - start)
