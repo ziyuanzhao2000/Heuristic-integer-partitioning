@@ -133,24 +133,24 @@ def random_sequence(length, upper_bound):
 
 
 def all_residues(repn, max_iters, n_ints, upper_bound):
-    test = random_sequence(n_ints, upper_bound)
+    seq = random_sequence(n_ints, upper_bound)
     init_solution = random_solution(n_ints, repn)
-    random_residue = residue(init_solution, test, n_ints, repn)
-    repeated_random_residue = residue(repeated_random(test, max_iters, repn), test, n_ints, repn)
-    hill_climbing_residue = residue(hill_climbing(test, max_iters, repn), test, n_ints, repn)
-    annealing_residue = residue(annealing(test, max_iters, T, repn), test, n_ints, repn)
-    return random_residue, repeated_random_residue, hill_climbing_residue, annealing_residue
+    kk_residue = KK(seq)
+    repeated_random_residue = residue(repeated_random(seq, max_iters, repn), seq, n_ints, repn)
+    hill_climbing_residue = residue(hill_climbing(seq, max_iters, repn), seq, n_ints, repn)
+    annealing_residue = residue(annealing(seq, max_iters, T, repn), seq, n_ints, repn)
+    return kk_residue, repeated_random_residue, hill_climbing_residue, annealing_residue
 
 
 def estimated_average_residues(repn, max_iters, n_instances, n_ints, upper_bound):
-    total_random_residue = total_repeated_random_residue = total_hill_climbing_residue = total_annealing_residue = 0
+    total_kk_residue = total_repeated_random_residue = total_hill_climbing_residue = total_annealing_residue = 0
     for repetition in range(n_instances):
         r1, r2, r3, r4 = all_residues(repn, max_iters, n_ints, upper_bound)
-        total_random_residue += r1
+        total_kk_residue += r1
         total_repeated_random_residue += r2
         total_hill_climbing_residue += r3
         total_annealing_residue += r4
-    return total_random_residue // n_instances, total_repeated_random_residue // n_instances, \
+    return total_kk_residue // n_instances, total_repeated_random_residue // n_instances, \
            total_hill_climbing_residue // n_instances, total_annealing_residue // n_instances
 
 
@@ -158,6 +158,6 @@ max_iters = 25000
 np.random.seed(123)
 
 start = time.time()
-print(estimated_average_residues('prepartition', 25000, 10, 100, 10 ** 12))
+print(estimated_average_residues('sign', 25000, 100, 100, 10 ** 12))
 end = time.time()
 print("Time elapsed:", end - start)
